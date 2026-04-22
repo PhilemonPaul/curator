@@ -1,31 +1,44 @@
 import React from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image } from 'react-native';
-import { MapPin, ChevronRight } from 'lucide-react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ImageBackground } from 'react-native';
+import { MapPin, ArrowRight } from 'lucide-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { mockProjects } from '../data/mockData';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing, layout } from '../theme/spacing';
-import Card from '../components/Card';
 
 export default function ProjectsScreen({ navigation }) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const renderItem = ({ item }) => (
     <TouchableOpacity 
-      activeOpacity={0.8} 
+      activeOpacity={0.9} 
       onPress={() => navigation.navigate('TowersList', { project: item })}
+      style={styles.cardContainer}
     >
-      <Card style={styles.card}>
-        <Image source={{ uri: item.image }} style={styles.image} />
-        <View style={styles.content}>
-          <Text style={styles.title}>{item.name}</Text>
-          <View style={styles.locationRow}>
-            <MapPin color={colors.textSecondary} size={14} />
-            <Text style={styles.location}>{item.location}</Text>
+      <ImageBackground 
+        source={{ uri: item.image }} 
+        style={styles.imageBackground}
+        imageStyle={styles.imageStyle}
+      >
+        <LinearGradient
+          colors={['transparent', 'rgba(18, 18, 18, 0.95)']}
+          style={styles.gradient}
+        >
+          <View style={styles.content}>
+            <View style={styles.textContainer}>
+              <Text style={styles.title}>{item.name}</Text>
+              <View style={styles.locationRow}>
+                <MapPin color={colors.primary} size={14} />
+                <Text style={styles.location}>{item.location}</Text>
+              </View>
+            </View>
+            <View style={styles.actionCircle}>
+              <ArrowRight color={colors.background} size={20} />
+            </View>
           </View>
-        </View>
-        <View style={styles.arrowContainer}>
-          <ChevronRight color={colors.textSecondary} size={24} />
-        </View>
-      </Card>
+        </LinearGradient>
+      </ImageBackground>
     </TouchableOpacity>
   );
 
@@ -41,7 +54,7 @@ export default function ProjectsScreen({ navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -49,38 +62,57 @@ const styles = StyleSheet.create({
   list: {
     padding: spacing.md,
   },
-  card: {
-    flexDirection: 'row',
-    padding: 0,
-    marginBottom: spacing.md,
-    overflow: 'hidden',
-    alignItems: 'center',
+  cardContainer: {
+    marginBottom: spacing.lg,
+    borderRadius: layout.borderRadiusLg,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
-  image: {
-    width: 80,
-    height: 80,
-    borderTopLeftRadius: layout.borderRadius,
-    borderBottomLeftRadius: layout.borderRadius,
+  imageBackground: {
+    width: '100%',
+    height: 220,
+    justifyContent: 'flex-end',
   },
-  content: {
-    flex: 1,
+  imageStyle: {
+    borderRadius: layout.borderRadiusLg,
+  },
+  gradient: {
+    height: '60%',
+    justifyContent: 'flex-end',
+    borderRadius: layout.borderRadiusLg,
     padding: spacing.md,
   },
+  content: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    justifyContent: 'space-between',
+  },
+  textContainer: {
+    flex: 1,
+  },
   title: {
-    ...typography.subtitle,
+    ...typography.header2,
     color: colors.text,
     marginBottom: spacing.xs,
   },
   locationRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: 6,
   },
   location: {
-    ...typography.caption,
+    ...typography.body,
     color: colors.textSecondary,
   },
-  arrowContainer: {
-    padding: spacing.md,
+  actionCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    justifyContent: 'center',
+    alignItems: 'center',
   }
 });

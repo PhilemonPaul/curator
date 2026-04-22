@@ -1,11 +1,14 @@
 import React, { useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
-import { colors } from '../theme/colors';
+import { DoorClosed } from 'lucide-react-native';
+import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import Card from '../components/Card';
 
 export default function UnitsScreen({ route, navigation }) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const { floor, tower } = route.params;
 
   useLayoutEffect(() => {
@@ -39,6 +42,9 @@ export default function UnitsScreen({ route, navigation }) {
       style={styles.cardContainer}
     >
       <Card style={styles.card}>
+        <View style={styles.iconContainer}>
+          <DoorClosed color={colors.textSecondary} size={24} />
+        </View>
         <Text style={styles.title}>{item.name}</Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
           <Text style={[styles.statusText, { color: getStatusTextColor(item.status) }]}>
@@ -70,7 +76,7 @@ export default function UnitsScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,
@@ -97,10 +103,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     paddingVertical: spacing.lg,
   },
+  iconContainer: {
+    marginBottom: spacing.sm,
+  },
   title: {
     ...typography.header3,
     color: colors.text,
-    marginBottom: spacing.sm,
+    marginBottom: spacing.md,
   },
   statusBadge: {
     paddingHorizontal: spacing.sm,

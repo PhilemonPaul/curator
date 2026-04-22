@@ -5,11 +5,12 @@ import TowersScreen from '../screens/TowersScreen';
 import FloorsScreen from '../screens/FloorsScreen';
 import UnitsScreen from '../screens/UnitsScreen';
 import InspectionDetailScreen from '../screens/InspectionDetailScreen';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 
 const Stack = createNativeStackNavigator();
 
 export default function ProjectsStackNavigator() {
+  const { colors } = useTheme();
   return (
     <Stack.Navigator
       screenOptions={{

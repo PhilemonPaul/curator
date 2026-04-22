@@ -1,6 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing, layout } from '../theme/spacing';
 
@@ -12,6 +12,8 @@ export default function Button({
   style,
   textStyle 
 }) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const isPrimary = variant === 'primary';
   const isOutline = variant === 'outline';
   const isDanger = variant === 'danger';
@@ -42,7 +44,7 @@ export default function Button({
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   button: {
     flexDirection: 'row',
     alignItems: 'center',

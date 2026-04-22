@@ -3,10 +3,12 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import Card from './Card';
 import Badge from './Badge';
 import { typography } from '../theme/typography';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { spacing } from '../theme/spacing';
 
 export default function TaskCard({ task, onPress }) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   return (
     <TouchableOpacity activeOpacity={0.8} onPress={onPress}>
       <Card style={styles.card}>
@@ -25,7 +27,7 @@ export default function TaskCard({ task, onPress }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   card: {
     marginBottom: spacing.md,
   },

@@ -12,9 +12,9 @@ export const layout = {
   borderRadiusLg: 16,
   shadow: {
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 8,
-    elevation: 2,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3, // Increased for dark mode
+    shadowRadius: 6,
+    elevation: 4,
   },
 };

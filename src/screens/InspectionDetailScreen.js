@@ -2,7 +2,7 @@ import React, { useState, useLayoutEffect } from 'react';
 import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
 import { Check, X, Camera, Image as ImageIcon, AlertCircle } from 'lucide-react-native';
 import * as ImagePicker from 'expo-image-picker';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing, layout } from '../theme/spacing';
 import { mockChecklist } from '../data/mockData';
@@ -10,6 +10,8 @@ import Card from '../components/Card';
 import Button from '../components/Button';
 
 export default function InspectionDetailScreen({ route, navigation }) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   const { unit, floor, tower } = route.params;
   const [checklist, setChecklist] = useState(mockChecklist);
   const [comments, setComments] = useState('');
@@ -137,7 +139,7 @@ export default function InspectionDetailScreen({ route, navigation }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.background,

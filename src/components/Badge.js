@@ -1,10 +1,12 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import { colors } from '../theme/colors';
+import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 
 export default function Badge({ label, type = 'status' }) {
+  const { colors } = useTheme();
+  const styles = getStyles(colors);
   let bgColor = colors.border;
   let textColor = colors.textSecondary;
 
@@ -52,7 +54,7 @@ export default function Badge({ label, type = 'status' }) {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   badge: {
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,

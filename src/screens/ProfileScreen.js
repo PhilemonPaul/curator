@@ -1,21 +1,77 @@
-import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Image, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { UserCircle, Phone, Mail, Briefcase } from 'lucide-react-native';
-import { colors } from '../theme/colors';
+import { UserCircle, Phone, Mail, Briefcase, Camera, Moon, Sun } from 'lucide-react-native';
+import * as ImagePicker from 'expo-image-picker';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
-import { spacing } from '../theme/spacing';
+import { spacing, layout } from '../theme/spacing';
 import { mockUser } from '../data/mockData';
 import Card from '../components/Card';
 import Button from '../components/Button';
 
 export default function ProfileScreen() {
+  const { colors, isDarkMode, toggleTheme } = useTheme();
+  const styles = getStyles(colors);
+  
+  const [profilePhoto, setProfilePhoto] = useState(null);
+
+  useEffect(() => {
+    loadProfilePhoto();
+  }, []);
+
+  const loadProfilePhoto = async () => {
+    try {
+      const uri = await AsyncStorage.getItem('@profile_photo');
+      if (uri) {
+        setProfilePhoto(uri);
+      }
+    } catch (e) {
+      console.error('Failed to load profile photo', e);
+    }
+  };
+
+  const pickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== 'granted') {
+      alert('Sorry, we need gallery permissions to change your profile photo!');
+      return;
+    }
+
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+
+    if (!result.canceled) {
+      const uri = result.assets[0].uri;
+      setProfilePhoto(uri);
+      try {
+        await AsyncStorage.setItem('@profile_photo', uri);
+      } catch (e) {
+        console.error('Failed to save profile photo', e);
+      }
+    }
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <View style={styles.container}>
         
         <View style={styles.header}>
-          <UserCircle color={colors.primary} size={80} style={styles.avatar} />
+          <TouchableOpacity onPress={pickImage} style={styles.avatarContainer}>
+            {profilePhoto ? (
+              <Image source={{ uri: profilePhoto }} style={styles.avatarImage} />
+            ) : (
+              <UserCircle color={colors.primary} size={80} style={styles.avatar} />
+            )}
+            <View style={styles.cameraIconContainer}>
+              <Camera color={colors.surface} size={14} />
+            </View>
+          </TouchableOpacity>
           <Text style={styles.name}>{mockUser.name}</Text>
           <Text style={styles.role}>{mockUser.role}</Text>
         </View>
@@ -48,7 +104,25 @@ export default function ProfileScreen() {
           </View>
         </Card>
 
-        <Button title="Edit Profile" variant="outline" style={styles.editBtn} />
+        <Card style={styles.detailsCard}>
+          <View style={styles.detailRow}>
+            {isDarkMode ? (
+              <Moon color={colors.textSecondary} size={20} />
+            ) : (
+              <Sun color={colors.textSecondary} size={20} />
+            )}
+            <View style={styles.detailContent}>
+              <Text style={styles.detailValue}>Dark Mode</Text>
+            </View>
+            <Switch
+              trackColor={{ false: colors.border, true: colors.primary }}
+              thumbColor={colors.surface}
+              onValueChange={toggleTheme}
+              value={isDarkMode}
+            />
+          </View>
+        </Card>
+
         <Button title="Log Out" variant="danger" style={styles.logoutBtn} />
 
       </View>
@@ -56,7 +130,7 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const getStyles = (colors) => StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: colors.background,
@@ -70,8 +144,32 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
     marginTop: spacing.xl,
   },
-  avatar: {
+  avatarContainer: {
     marginBottom: spacing.md,
+    position: 'relative',
+  },
+  avatar: {
+    // Default avatar style
+  },
+  avatarImage: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    borderWidth: 2,
+    borderColor: colors.primary,
+  },
+  cameraIconContainer: {
+    position: 'absolute',
+    bottom: 0,
+    right: 0,
+    backgroundColor: colors.primary,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: colors.surface,
   },
   name: {
     ...typography.header2,
@@ -108,9 +206,6 @@ const styles = StyleSheet.create({
     height: 1,
     backgroundColor: colors.border,
     marginLeft: 36, // Align with text
-  },
-  editBtn: {
-    marginBottom: spacing.md,
   },
   logoutBtn: {
     marginTop: 'auto',
