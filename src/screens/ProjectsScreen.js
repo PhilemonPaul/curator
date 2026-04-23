@@ -95,7 +95,7 @@ const getStyles = (colors) => StyleSheet.create({
   },
   title: {
     ...typography.header2,
-    color: colors.text,
+    color: '#F3F4F6', // Forced light for dark gradient
     marginBottom: spacing.xs,
   },
   locationRow: {
@@ -105,7 +105,7 @@ const getStyles = (colors) => StyleSheet.create({
   },
   location: {
     ...typography.body,
-    color: colors.textSecondary,
+    color: '#D1D5DB', // Forced light grey for dark gradient
   },
   actionCircle: {
     width: 40,
