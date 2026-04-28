@@ -1,21 +1,26 @@
 import React, { useState, useLayoutEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Image } from 'react-native';
-import { Check, X, Camera, Image as ImageIcon, AlertCircle } from 'lucide-react-native';
-import * as ImagePicker from 'expo-image-picker';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity } from 'react-native';
+import { Check, X } from 'lucide-react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing, layout } from '../theme/spacing';
 import { mockChecklist } from '../data/mockData';
 import Card from '../components/Card';
 import Button from '../components/Button';
+import { useProjects } from '../context/ProjectContext';
 
 export default function InspectionDetailScreen({ route, navigation }) {
   const { colors } = useTheme();
   const styles = getStyles(colors);
-  const { unit, floor, tower } = route.params;
-  const [checklist, setChecklist] = useState(mockChecklist);
+  const { unit, floor, tower, project } = route.params;
+  const { projects, updateUnitChecklist } = useProjects();
   const [comments, setComments] = useState('');
-  const [images, setImages] = useState([]);
+
+  const currentProject = projects.find(p => p.id === project.id);
+  const currentTower = currentProject?.towers?.find(t => t.id === tower.id);
+  const currentFloor = currentTower?.floors?.find(f => f.id === floor.id);
+  const currentUnit = currentFloor?.units?.find(u => u.id === unit.id);
+  const checklist = currentUnit?.checklist || [];
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -24,40 +29,17 @@ export default function InspectionDetailScreen({ route, navigation }) {
   }, [navigation, unit]);
 
   const toggleCheck = (id, status) => {
-    setChecklist(prev => prev.map(item => 
+    const newChecklist = checklist.map(item => 
       item.id === id ? { ...item, passed: status } : item
-    ));
+    );
+    updateUnitChecklist(project.id, tower.id, floor.id, unit.id, newChecklist);
   };
 
-  const pickImage = async () => {
-    let result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setImages([...images, result.assets[0].uri]);
-    }
-  };
-
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== 'granted') {
-      alert('Sorry, we need camera permissions to make this work!');
-      return;
-    }
-
-    let result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.8,
-    });
-
-    if (!result.canceled) {
-      setImages([...images, result.assets[0].uri]);
-    }
+  const updateRemark = (id, remark) => {
+    const newChecklist = checklist.map(item => 
+      item.id === id ? { ...item, remark } : item
+    );
+    updateUnitChecklist(project.id, tower.id, floor.id, unit.id, newChecklist);
   };
 
   return (
@@ -70,22 +52,31 @@ export default function InspectionDetailScreen({ route, navigation }) {
 
       <Text style={styles.sectionTitle}>Checklist</Text>
       {checklist.map(item => (
-        <Card key={item.id} style={styles.checkItem}>
-          <Text style={styles.checkText}>{item.text}</Text>
-          <View style={styles.checkActions}>
-            <TouchableOpacity 
-              style={[styles.checkBtn, item.passed === true && styles.passedBtn]}
-              onPress={() => toggleCheck(item.id, true)}
-            >
-              <Check color={item.passed === true ? colors.surface : colors.textSecondary} size={20} />
-            </TouchableOpacity>
-            <TouchableOpacity 
-              style={[styles.checkBtn, item.passed === false && styles.failedBtn]}
-              onPress={() => toggleCheck(item.id, false)}
-            >
-              <X color={item.passed === false ? colors.surface : colors.textSecondary} size={20} />
-            </TouchableOpacity>
+        <Card key={item.id} style={styles.checkItemContainer}>
+          <View style={styles.checkItemHeader}>
+            <Text style={styles.checkText}>{item.text}</Text>
+            <View style={styles.checkActions}>
+              <TouchableOpacity 
+                style={[styles.checkBtn, item.passed === true && styles.passedBtn]}
+                onPress={() => toggleCheck(item.id, true)}
+              >
+                <Check color={item.passed === true ? colors.surface : colors.textSecondary} size={20} />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={[styles.checkBtn, item.passed === false && styles.failedBtn]}
+                onPress={() => toggleCheck(item.id, false)}
+              >
+                <X color={item.passed === false ? colors.surface : colors.textSecondary} size={20} />
+              </TouchableOpacity>
+            </View>
           </View>
+          <TextInput
+            style={styles.itemRemarkInput}
+            placeholder="Add a remark..."
+            placeholderTextColor={colors.textSecondary}
+            value={item.remark || ''}
+            onChangeText={(text) => updateRemark(item.id, text)}
+          />
         </Card>
       ))}
 
@@ -99,41 +90,6 @@ export default function InspectionDetailScreen({ route, navigation }) {
         value={comments}
         onChangeText={setComments}
       />
-
-      <Text style={styles.sectionTitle}>Photos</Text>
-      <View style={styles.photoActions}>
-        <TouchableOpacity style={styles.photoBtn} onPress={takePhoto}>
-          <Camera color={colors.primary} size={24} />
-          <Text style={styles.photoBtnText}>Camera</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.photoBtn} onPress={pickImage}>
-          <ImageIcon color={colors.primary} size={24} />
-          <Text style={styles.photoBtnText}>Gallery</Text>
-        </TouchableOpacity>
-      </View>
-
-      {images.length > 0 && (
-        <ScrollView horizontal style={styles.imagesScroll} showsHorizontalScrollIndicator={false}>
-          {images.map((uri, index) => (
-            <Image key={index} source={{ uri }} style={styles.attachedImage} />
-          ))}
-        </ScrollView>
-      )}
-
-      <View style={styles.submitSection}>
-        <Button 
-          title="Raise NCR" 
-          variant="outline" 
-          icon={AlertCircle}
-          style={styles.ncrBtn}
-          textStyle={{ color: colors.danger }}
-        />
-        <Button 
-          title="Submit Inspection" 
-          style={styles.submitBtn}
-          onPress={() => navigation.goBack()}
-        />
-      </View>
 
     </ScrollView>
   );
@@ -166,18 +122,32 @@ const getStyles = (colors) => StyleSheet.create({
     marginBottom: spacing.sm,
     marginTop: spacing.md,
   },
-  checkItem: {
+  checkItemContainer: {
+    marginBottom: spacing.sm,
+    paddingVertical: spacing.sm,
+    flexDirection: 'column',
+  },
+  checkItemHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.sm,
-    paddingVertical: spacing.sm,
   },
   checkText: {
     ...typography.body,
     color: colors.text,
     flex: 1,
     marginRight: spacing.md,
+  },
+  itemRemarkInput: {
+    backgroundColor: colors.background,
+    borderRadius: layout.borderRadius,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    ...typography.body,
+    color: colors.text,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   checkActions: {
     flexDirection: 'row',
@@ -209,44 +179,4 @@ const getStyles = (colors) => StyleSheet.create({
     borderColor: colors.border,
     marginBottom: spacing.md,
   },
-  photoActions: {
-    flexDirection: 'row',
-    gap: spacing.md,
-    marginBottom: spacing.md,
-  },
-  photoBtn: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: colors.surface,
-    padding: spacing.md,
-    borderRadius: layout.borderRadius,
-    borderWidth: 1,
-    borderColor: colors.border,
-    gap: spacing.sm,
-  },
-  photoBtnText: {
-    ...typography.button,
-    color: colors.primary,
-  },
-  imagesScroll: {
-    marginBottom: spacing.md,
-  },
-  attachedImage: {
-    width: 100,
-    height: 100,
-    borderRadius: layout.borderRadius,
-    marginRight: spacing.sm,
-  },
-  submitSection: {
-    marginTop: spacing.lg,
-    gap: spacing.md,
-  },
-  ncrBtn: {
-    borderColor: colors.danger,
-  },
-  submitBtn: {
-    // Primary by default
-  }
 });

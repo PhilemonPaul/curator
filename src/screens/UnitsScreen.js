@@ -5,11 +5,13 @@ import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
 import Card from '../components/Card';
+import { useProjects } from '../context/ProjectContext';
 
 export default function UnitsScreen({ route, navigation }) {
   const { colors } = useTheme();
   const styles = getStyles(colors);
-  const { floor, tower } = route.params;
+  const { floor, tower, project } = route.params;
+  const { projects } = useProjects();
 
   useLayoutEffect(() => {
     navigation.setOptions({
@@ -17,50 +19,62 @@ export default function UnitsScreen({ route, navigation }) {
     });
   }, [navigation, tower, floor]);
 
+  // Find the current floor's units from the context
+  const currentProject = projects.find(p => p.id === project.id);
+  const currentTower = currentProject?.towers?.find(t => t.id === tower.id);
+  const currentFloor = currentTower?.floors?.find(f => f.id === floor.id);
+  const units = currentFloor?.units || [];
+
   const getStatusColor = (status) => {
     switch (status) {
-      case 'Completed': return colors.statusCompleted;
-      case 'In Progress': return colors.statusInProgress;
-      case 'Issue Found': return colors.statusIssue;
+      case 'Completed': return colors.success;
+      case 'Not Completed': return colors.statusInProgress;
+      case 'Not Inspected': return colors.statusPending;
       default: return colors.statusPending;
     }
   };
 
   const getStatusTextColor = (status) => {
     switch (status) {
-      case 'Completed': return colors.statusCompletedText;
-      case 'In Progress': return colors.statusInProgressText;
-      case 'Issue Found': return colors.statusIssueText;
+      case 'Completed': return colors.surface;
+      case 'Not Completed': return colors.statusInProgressText;
+      case 'Not Inspected': return colors.statusPendingText;
       default: return colors.statusPendingText;
     }
   };
 
-  const renderItem = ({ item }) => (
-    <TouchableOpacity 
-      activeOpacity={0.8} 
-      onPress={() => navigation.navigate('InspectionDetail', { unit: item, floor, tower })}
-      style={styles.cardContainer}
-    >
-      <Card style={styles.card}>
-        <View style={styles.iconContainer}>
-          <DoorClosed color={colors.textSecondary} size={24} />
-        </View>
-        <Text style={styles.title}>{item.name}</Text>
-        <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <Text style={[styles.statusText, { color: getStatusTextColor(item.status) }]}>
-            {item.status}
-          </Text>
-        </View>
-      </Card>
-    </TouchableOpacity>
-  );
+  const renderItem = ({ item }) => {
+    const isCompleted = item.checklist && item.checklist.length > 0 && item.checklist.every(c => c.passed === true);
+    const hasAnyCheck = item.checklist && item.checklist.some(c => c.passed !== null);
+    const status = isCompleted ? 'Completed' : (hasAnyCheck ? 'Not Completed' : 'Not Inspected');
+
+    return (
+      <TouchableOpacity 
+        activeOpacity={0.8} 
+        onPress={() => navigation.navigate('InspectionDetail', { unit: item, floor, tower, project })}
+        style={styles.cardContainer}
+      >
+        <Card style={styles.card}>
+          <View style={styles.iconContainer}>
+            <DoorClosed color={colors.textSecondary} size={24} />
+          </View>
+          <Text style={styles.title}>{item.name}</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusColor(status) }]}>
+            <Text style={[styles.statusText, { color: getStatusTextColor(status) }]}>
+              {status}
+            </Text>
+          </View>
+        </Card>
+      </TouchableOpacity>
+    );
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Select Unit for Inspection</Text>
-      {floor.units && floor.units.length > 0 ? (
+      {units.length > 0 ? (
         <FlatList
-          data={floor.units}
+          data={units}
           keyExtractor={item => item.id}
           renderItem={renderItem}
           contentContainerStyle={styles.list}

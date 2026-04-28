@@ -1,18 +1,44 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ClipboardList, AlertTriangle, PlusCircle, HardHat, Building2, Ruler } from 'lucide-react-native';
+import { ClipboardList, PlusCircle, HardHat, Building2, Ruler } from 'lucide-react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
-import { mockUser, mockTasks, mockIssues } from '../data/mockData';
-import TaskCard from '../components/TaskCard';
+import { mockUser } from '../data/mockData';
+import { useProjects } from '../context/ProjectContext';
 import Button from '../components/Button';
 import Card from '../components/Card';
 
 export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
   const styles = getStyles(colors);
+  const { projects } = useProjects();
+
+  const getProjectStatus = (project) => {
+    if (!project.towers || project.towers.length === 0) return 'No Units';
+    
+    let allCompleted = true;
+    let hasUnits = false;
+    
+    for (const tower of project.towers) {
+      if (!tower.floors) continue;
+      for (const floor of tower.floors) {
+        if (!floor.units) continue;
+        for (const unit of floor.units) {
+          hasUnits = true;
+          const isComplete = unit.checklist && unit.checklist.every(item => item.passed === true);
+          if (!isComplete) {
+            allCompleted = false;
+          }
+        }
+      }
+    }
+    
+    if (!hasUnits) return 'No Units';
+    return allCompleted ? 'Completed' : 'In Progress';
+  };
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -26,18 +52,13 @@ export default function HomeScreen({ navigation }) {
         <View style={styles.metricsRow}>
           <Card style={styles.metricCard}>
             <HardHat color={colors.primary} size={24} style={styles.metricIcon} />
-            <Text style={styles.metricValue}>12</Text>
+            <Text style={styles.metricValue}>{projects.length}</Text>
             <Text style={styles.metricLabel}>Active Sites</Text>
           </Card>
           <Card style={styles.metricCard}>
             <ClipboardList color={colors.primary} size={24} style={styles.metricIcon} />
             <Text style={styles.metricValue}>3</Text>
             <Text style={styles.metricLabel}>Tasks Today</Text>
-          </Card>
-          <Card style={styles.metricCard}>
-            <AlertTriangle color={colors.danger} size={24} style={styles.metricIcon} />
-            <Text style={[styles.metricValue, { color: colors.danger }]}>1</Text>
-            <Text style={styles.metricLabel}>Open NCRs</Text>
           </Card>
         </View>
 
@@ -48,40 +69,36 @@ export default function HomeScreen({ navigation }) {
             style={styles.actionBtn} 
             onPress={() => navigation.navigate('ProjectsFlow')}
           />
-          <Button 
-            title="Raise NCR" 
-            variant="danger" 
-            icon={AlertTriangle} 
-            style={styles.actionBtn} 
-          />
         </View>
 
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Today's Inspections</Text>
+            <Text style={styles.sectionTitle}>Project Completion Status</Text>
           </View>
-          {mockTasks.map(task => (
-            <TaskCard 
-              key={task.id} 
-              task={task} 
-              onPress={() => {}} 
-            />
-          ))}
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Critical Issues / NCRs</Text>
-          {mockIssues.map(issue => (
-            <Card key={issue.id} style={styles.issueCard}>
-              <View style={styles.issueHeader}>
-                <AlertTriangle color={colors.danger} size={20} />
-                <Text style={styles.issueTitle}>{issue.title}</Text>
-              </View>
-              <Text style={styles.issueProject}>{issue.projectName}</Text>
-              <Text style={styles.issueLocation}>{issue.location}</Text>
-              <Text style={styles.issueDate}>{issue.date}</Text>
-            </Card>
-          ))}
+          {projects.map(project => {
+            const status = getProjectStatus(project);
+            return (
+              <Card key={project.id} style={styles.projectCard}>
+                <View style={styles.projectInfo}>
+                  <Text style={styles.projectTitle}>{project.name}</Text>
+                  <Text style={styles.projectLocation}>{project.location}</Text>
+                </View>
+                <View style={[styles.statusBadge, { 
+                  backgroundColor: status === 'Completed' ? colors.success : 
+                                  status === 'In Progress' ? colors.statusInProgress : 
+                                  colors.surface
+                }]}>
+                  <Text style={[styles.statusText, { 
+                    color: status === 'Completed' ? colors.surface : 
+                           status === 'In Progress' ? colors.statusInProgressText : 
+                           colors.textSecondary 
+                  }]}>
+                    {status}
+                  </Text>
+                </View>
+              </Card>
+            );
+          })}
         </View>
 
       </ScrollView>
@@ -166,35 +183,32 @@ const getStyles = (colors) => StyleSheet.create({
     ...typography.header3,
     color: colors.text,
   },
-  issueCard: {
-    marginBottom: spacing.md,
-    borderLeftWidth: 4,
-    borderLeftColor: colors.danger,
-    backgroundColor: colors.surface,
-  },
-  issueHeader: {
+  projectCard: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: spacing.sm,
-    marginBottom: spacing.sm,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
-  issueTitle: {
+  projectInfo: {
+    flex: 1,
+  },
+  projectTitle: {
     ...typography.subtitle,
     color: colors.text,
+    marginBottom: 4,
   },
-  issueProject: {
-    ...typography.body,
-    color: colors.textSecondary,
-    marginBottom: 2,
-  },
-  issueLocation: {
+  projectLocation: {
     ...typography.caption,
     color: colors.textSecondary,
-    marginBottom: spacing.sm,
   },
-  issueDate: {
+  statusBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: 12,
+  },
+  statusText: {
     ...typography.caption,
-    color: colors.textSecondary,
-    fontWeight: '600',
-  },
+    fontWeight: 'bold',
+  }
 });
