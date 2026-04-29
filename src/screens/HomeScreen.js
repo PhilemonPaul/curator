@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ClipboardList, PlusCircle, HardHat, Building2, Ruler } from 'lucide-react-native';
+import { ClipboardList, PlusCircle, HardHat, Building2, Ruler, Download } from 'lucide-react-native';
 import { useTheme } from '../theme/ThemeContext';
 import { typography } from '../theme/typography';
 import { spacing } from '../theme/spacing';
@@ -9,6 +9,8 @@ import { mockUser } from '../data/mockData';
 import { useProjects } from '../context/ProjectContext';
 import Button from '../components/Button';
 import Card from '../components/Card';
+import { generateProjectPDF } from '../utils/pdfGenerator';
+import { TouchableOpacity } from 'react-native';
 
 export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
@@ -83,18 +85,26 @@ export default function HomeScreen({ navigation }) {
                   <Text style={styles.projectTitle}>{project.name}</Text>
                   <Text style={styles.projectLocation}>{project.location}</Text>
                 </View>
-                <View style={[styles.statusBadge, { 
-                  backgroundColor: status === 'Completed' ? colors.success : 
-                                  status === 'In Progress' ? colors.statusInProgress : 
-                                  colors.surface
-                }]}>
-                  <Text style={[styles.statusText, { 
-                    color: status === 'Completed' ? colors.surface : 
-                           status === 'In Progress' ? colors.statusInProgressText : 
-                           colors.textSecondary 
+                <View style={styles.projectActions}>
+                  <View style={[styles.statusBadge, { 
+                    backgroundColor: status === 'Completed' ? colors.success : 
+                                    status === 'In Progress' ? colors.statusInProgress : 
+                                    colors.surface
                   }]}>
-                    {status}
-                  </Text>
+                    <Text style={[styles.statusText, { 
+                      color: status === 'Completed' ? colors.surface : 
+                             status === 'In Progress' ? colors.statusInProgressText : 
+                             colors.textSecondary 
+                    }]}>
+                      {status}
+                    </Text>
+                  </View>
+                  <TouchableOpacity 
+                    style={styles.downloadBtn} 
+                    onPress={() => generateProjectPDF(project, status)}
+                  >
+                    <Download color={colors.primary} size={20} />
+                  </TouchableOpacity>
                 </View>
               </Card>
             );
@@ -210,5 +220,17 @@ const getStyles = (colors) => StyleSheet.create({
   statusText: {
     ...typography.caption,
     fontWeight: 'bold',
+  },
+  projectActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  downloadBtn: {
+    padding: spacing.xs,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: colors.border,
   }
 });
